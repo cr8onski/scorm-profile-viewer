@@ -1,0 +1,22 @@
+<html>
+<head>
+    <title>{{ title }}</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<body>
+    <h1>Statement Results</h1>
+    <ul id="results"></ul>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        socket.on('validation-report', function(msg){
+            console.log(msg);
+            var ul = document.getElementById('results');
+            var li = document.createElement('li');
+            li.innerHTML = msg;
+            ul.appendChild(li);
+        });
+    </script>
+</body>
+</html>
