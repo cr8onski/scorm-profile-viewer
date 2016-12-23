@@ -7,20 +7,20 @@ var session = require('express-session');
 var bodyParser = require('body-parser');
 var async = require('async');
 
-var mongoose = require('mongoose');
-
-var debug = require('debug')('scorm-profile-viewer:app');
-
 var app = express();
-
 var config = require('./config');
+
 var passport = require('passport');
+
 var MongoStore = require('connect-mongo')(session);
 
+var mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.connect(config.db.url);
 var db = mongoose.connection;
 var mydal;
+
+var debug = require('debug')('scorm-profile-viewer:app');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -31,7 +31,7 @@ app.set('view engine', 'hjs');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-//app.use(cookieParser());
+
 app.use(session({ 
     secret: 'ants ate my sandwich', 
     cookie: { maxAge: 60000},
@@ -39,11 +39,10 @@ app.use(session({
     saveUninitialized: false,
     store: new MongoStore({mongooseConnection: mongoose.connection})
 }));
-//app.use(express.session({secret: 'ants ate my sandwich'}));
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 // enable CORS
 app.use(function(req, res, next) {
@@ -55,7 +54,6 @@ app.use(function(req, res, next) {
 async.series([
     function doDatabase(cb) {        
         // connect to mongo
-        
         db.on('error', console.error.bind(console, 'connection error: '));
         db.once('open', function() {
             mydal = new (require('./db/DAL').DAL)();
@@ -86,7 +84,6 @@ async.series([
         app.use('/', routes);
         app.use('/users', users);
         app.use('/statements', statements)
-        
         
         // catch 404 and forward to error handler
         app.use(function(req, res, next) {
@@ -120,8 +117,6 @@ async.series([
         });
     }
 );
-
-
 
 
 module.exports = app;
