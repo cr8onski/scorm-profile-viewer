@@ -1,5 +1,6 @@
 <form method="post">
-    <input type="text" name="username">
+    <input type="text" name="username" autofocus>
     <input type="password" name="password">
+    <input type="hidden" name="r" value="{{r}}">
     <input type="submit">
 </form>

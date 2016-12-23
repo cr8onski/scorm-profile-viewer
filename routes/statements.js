@@ -8,6 +8,8 @@ var validate = require('jsonschema').validate;
 var stmtvalidator = require('../lib/stmtvalidator').Validator;
 var validateStatement = (new stmtvalidator()).validateStatement;
 
+var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
+
 var schemas = {
     "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema'),
     "http://adlnet.gov/expapi/verbs/terminated": require('../schemas/scorm.profile.terminating.attempt.schema.json'),
@@ -17,7 +19,7 @@ var schemas = {
 
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', mustBeLoggedIn, function(req, res, next) {
     res.render('statements', { title: 'Express - Statements endpoint!' });
 });
 

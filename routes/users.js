@@ -2,6 +2,7 @@ var router = require('express').Router();
 var debug = require('debug')('scorm-profile-viewer:users');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
 
 
 module.exports = function(the_app, DAL){
@@ -40,19 +41,33 @@ module.exports = function(the_app, DAL){
     ));
 
     /* GET users listing. */
-    router.get('/', function(req, res, next) {
+    router.get('/', mustBeLoggedIn, function(req, res, next) {
         res.render('user', {'user':req.user});
     });
 
     router.get('/login', function(req, res, next) {
-        res.render('login', {});
+        debug("in get login .. r: ", req.query.r);
+        res.render('login', {r: req.query.r});
     });
 
     router.post('/login', 
-        passport.authenticate('local', { successRedirect: './',
-                                         failureRedirect: './login'
-                                       })
+//        passport.authenticate('local', { successRedirect: './',
+//                                         failureRedirect: './login'
+//                                       })
+        passport.authenticate('local'),
+        function(req, res, next) {
+            //look for param r
+            if (req.body.r) res.redirect(decodeURIComponent(req.body.r));
+            else res.redirect('./')
+            // otherwise redirect to /
+        }
     );
+    
+    router.get('/logout', function(req, res, next) {
+        if(req.user) req.logout();
+        
+        res.redirect('/');
+    });
     
     return router;
 };

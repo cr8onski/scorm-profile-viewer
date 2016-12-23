@@ -14,5 +14,5 @@
 
 # run w/ nodemon and debugging
 `DEBUG=scorm-profile-viewer:* npm run dev`  
-or Windows  
-`set DEBUG=myapp:* & npm start`
+on Windows  
+`set DEBUG=scorm-profile-viewer:* & npm run dev`
