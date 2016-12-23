@@ -1,0 +1,9 @@
+{
+    "username": {
+        "type": "String",
+        "unique": true,
+        "required": true
+    },
+    "password": "String",
+    "salt": "String"
+}
