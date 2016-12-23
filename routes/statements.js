@@ -1,5 +1,4 @@
-var express = require('express');
-var router = express.Router();
+var router = require('express').Router();
 
 var debug = require('debug')('scorm-profile-viewer:statements');
 
@@ -19,13 +18,10 @@ var schemas = {
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-    var io = req.app.get('socket.io');
-    debug('got io', io);
-  res.render('statements', { title: 'Express - Statements endpoint!' });
+    res.render('statements', { title: 'Express - Statements endpoint!' });
 });
 
 router.post('/', function(req, res, next) {
-//    debug(req.body);
     var io = req.app.get('socket.io');
     
     var stmt = req.body;

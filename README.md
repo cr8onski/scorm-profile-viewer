@@ -3,6 +3,9 @@
 # install
 `npm install`
 
+# start mongo
+`mongod`
+
 # run
 `npm start`
 

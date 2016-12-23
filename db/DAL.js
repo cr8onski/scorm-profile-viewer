@@ -4,8 +4,6 @@ var User = require('./models/user');
 
 function DAL () {}
 
-//var userschema = require('./mongooseSchemas/user');
-
 DAL.prototype.getUser = function(username, cb) {
     User.findOne({username: username}, cb);
 };
@@ -37,14 +35,5 @@ DAL.prototype.validPassword = function(user, password) {
     return user.password === User.hashPassword(password);
 };
 
-
-//DAL.prototype.User = mongoose.model('User', userschema);
-//DAL.prototype.User.prototype.validPassword = function(user, password) {
-//    debug('validPassword');
-//    return user.password === password;
-//};
-//DAL.prototype.User.prototype.hashPassword = function(password) {
-//    
-//}
 
 module.exports.DAL = DAL;

@@ -1,18 +1,16 @@
-var express = require('express');
-var router = express.Router();
+var router = require('express').Router();
 var debug = require('debug')('scorm-profile-viewer:users');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 
 
 module.exports = function(the_app, DAL){
-//    var User = DAL.User;
     
     passport.use(new LocalStrategy(
         function(username, password, done) {
             DAL.getUser(username, function(err, user) {
                 if (err) { 
-                    debug('got an error in findOne')
+                    debug('got an error in DAL getUser')
                     return done(err); 
                 }
                 if (!user) {
@@ -23,7 +21,6 @@ module.exports = function(the_app, DAL){
                         }
                         debug('success in save newuser')
                         return done(null, newuser);
-                        
                     });
                 }
                 else {
@@ -44,7 +41,6 @@ module.exports = function(the_app, DAL){
 
     /* GET users listing. */
     router.get('/', function(req, res, next) {
-        debug(req.user);
         res.render('user', {'user':req.user});
     });
 
