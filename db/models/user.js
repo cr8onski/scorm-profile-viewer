@@ -4,7 +4,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const crypto = require('crypto');
 
-var UserSchema = new Schema(require('../mongooseSchemas/user'));
+var isEmail = require('validator').isEmail;
+var schema = require('../mongooseSchemas/user');
+schema.username.validate = [isEmail, 'invalid username, must be email'];
+var UserSchema = new Schema(schema);
+
 
 const LEN = 256;
 const SALT_LEN = 64;

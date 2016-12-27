@@ -7,6 +7,10 @@
   <body>
     <h1>{{ title }}</h1>
     <p>Welcome to {{ title }}</p>
-    
+    <form method="post" action="/users/login">
+        <label for="username">email </label><input type="text" name="username" autofocus>
+        <label for="password">password </label><input type="password" name="password">
+        <input type="submit">
+    </form>
   </body>
 </html>

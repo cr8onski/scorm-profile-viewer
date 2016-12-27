@@ -1,1 +1,4 @@
 <h1>Oh yeah: {{user.username}}</h1>
+
+<p>Use your credentials to connect to the LRS endpoints</p>
+<p>Inspect your statements <a href="/inspect/{{user.id}}/statements">here</a></p>

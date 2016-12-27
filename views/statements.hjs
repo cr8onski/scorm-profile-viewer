@@ -10,7 +10,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-        socket.on('validation-report', function(msg){
+        socket.on('{{ streamid }}-validation-report', function(msg){
             console.log(msg);
             var ul = document.getElementById('results');
             var li = document.createElement('li');
