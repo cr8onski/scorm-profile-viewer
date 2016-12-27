@@ -63,12 +63,10 @@ async.series([
     },
     function setupPassport(cb) {
         passport.serializeUser(function(user, done) {
-            debug('serializing user', user);
             done(null, user.id);
         });
 
         passport.deserializeUser(function(id, done) {
-            debug('deserialize user', id);
             mydal.findUserById(id, function(err, user) {
                 done(err, user);
             });

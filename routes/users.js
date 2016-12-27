@@ -51,13 +51,10 @@ module.exports = function(the_app, DAL){
     });
 
     router.post('/login', 
-//        passport.authenticate('local', { successRedirect: './',
-//                                         failureRedirect: './login'
-//                                       })
         passport.authenticate('local'),
         function(req, res, next) {
             //look for param r
-            if (req.body.r) res.redirect(decodeURIComponent(req.body.r));
+            if (req.query.r) res.redirect(decodeURIComponent(req.query.r));
             else res.redirect('./')
             // otherwise redirect to /
         }
