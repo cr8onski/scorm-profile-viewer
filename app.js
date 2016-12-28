@@ -3,15 +3,24 @@ var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
+var session = require('express-session');
 var bodyParser = require('body-parser');
-
-var debug = require('debug')('scorm-profile-viewer:app');
+var async = require('async');
 
 var app = express();
+var config = require('./config');
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
-var statements = require('./routes/statements');
+var passport = require('passport');
+
+var MongoStore = require('connect-mongo')(session);
+
+var mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+mongoose.connect(config.db.url);
+var db = mongoose.connection;
+var mydal;
+
+var debug = require('debug')('scorm-profile-viewer:app');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -22,7 +31,17 @@ app.set('view engine', 'hjs');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
+
+app.use(session({ 
+    secret: 'ants ate my sandwich', 
+    cookie: { maxAge: 60000},
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoStore({mongooseConnection: mongoose.connection})
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // enable CORS
@@ -32,41 +51,72 @@ app.use(function(req, res, next) {
   next();
 });
 
-// routes
-app.use('/', routes);
-app.use('/users', users);
-app.use('/statements', statements)
+async.series([
+    function doDatabase(cb) {        
+        // connect to mongo
+        db.on('error', console.error.bind(console, 'connection error: '));
+        db.once('open', function() {
+            mydal = new (require('./db/DAL').DAL)();
+            app.set('DAL', mydal);
+            cb();
+        });
+    },
+    function setupPassport(cb) {
+        passport.serializeUser(function(user, done) {
+            done(null, user.id);
+        });
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+        passport.deserializeUser(function(id, done) {
+            mydal.findUserById(id, function(err, user) {
+                done(err, user);
+            });
+        });
+        
+        cb();
+    }],
+    function startServer() {
+        // routes
+        var routes = require('./routes/index');
+        var users = require('./routes/users')(app, mydal);
+        var statements = require('./routes/statements')(app, mydal);
+        var inspect = require('./routes/inspect')(app, mydal);
+        app.use('/', routes);
+        app.use('/users', users);
+        app.use('/statements', statements);
+        app.use('/inspect', inspect);
+        
+        // catch 404 and forward to error handler
+        app.use(function(req, res, next) {
+          var err = new Error('Not Found');
+          err.status = 404;
+          next(err);
+        });
 
-// error handlers
+        // error handlers
 
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: err
-    });
-  });
-}
+        // development error handler
+        // will print stacktrace
+        if (app.get('env') === 'development') {
+          app.use(function(err, req, res, next) {
+            res.status(err.status || 500);
+            res.render('error', {
+              message: err.message,
+              error: err
+            });
+          });
+        }
 
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
-  });
-});
+        // production error handler
+        // no stacktraces leaked to user
+        app.use(function(err, req, res, next) {
+          res.status(err.status || 500);
+          res.render('error', {
+            message: err.message,
+            error: {}
+          });
+        });
+    }
+);
 
 
 module.exports = app;
