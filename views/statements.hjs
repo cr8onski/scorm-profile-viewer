@@ -19,17 +19,21 @@
             var subul = document.createElement('ul');
             ul.appendChild(subul);
             li = document.createElement('li');
-            li.innerHTML = "message: " + result.message;
+            li.innerHTML = result.message;
             subul.appendChild(li);
             if (result.schema) {
                 li = document.createElement('li');
                 li.innerHTML = "Tested against: <a href='" + result.schema.link + "'>" + result.schema.id + "</a>";
                 subul.appendChild(li);
             }
-            if (result.results) {
-                li = document.createElement('li');
-                li.innerHTML = "this should hold the errors in result.results";
-                subul.appendChild(li);
+            if (result.errors) {
+                var errul = document.createElement('ul');
+                subul.appendChild(errul);
+                for (var idx in result.errors) {
+                    li = document.createElement('li');
+                    li.innerHTML = result.errors[idx].message + " @ " + result.errors[idx].property;
+                    errul.appendChild(li);
+                }
             }
             
         });

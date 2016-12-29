@@ -81,7 +81,12 @@ module.exports = function (the_app, DAL) {
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
             validationResult.message = "Failed xAPI Statement validation with " + report.totalErrors + " error(s)";
-            validationResult.errors = report.results[0].errors;
+            
+            var reportresults = report.results[0];
+            for (var idx in reportresults.errors) {
+                var errinfo = reportresults.errors[idx];
+                validationResult.errors.push({property: errinfo.trace, message: errinfo.message});
+            }
             validationResult.schema = undefined;
             io.emit(channel, validationResult);
             res.status(400).send("Bad Request - " + validationResult.message);
@@ -91,7 +96,7 @@ module.exports = function (the_app, DAL) {
         // find schema
         var schema = schemas[stmt.verb.id];
         if (!schema) {
-            validationResult.message = "statement didn't match a schema.. unvalidated";
+            validationResult.message = "Statement didn't match a schema.. unvalidated";
             io.emit(channel, validationResult);
             res.status(400).send("Bad Request - " + validationResult.message);
             return;
@@ -101,7 +106,10 @@ module.exports = function (the_app, DAL) {
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
             validationResult.message = "Failed SCORM Profile validation with " +validatedresponse.errors.length + " error(s)";
-            validationResult.errors = validatedresponse.errors;
+            for (var idx in validatedresponse.errors) {
+                var errinfo = validatedresponse.errors[idx];
+                validationResult.errors.push({property: errinfo.property, message: errinfo.instance + " " + errinfo.message});
+            }
             validationResult.schema.id = schema.id;
             var parts = schema.id.split('/');
             validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
