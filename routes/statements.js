@@ -108,7 +108,7 @@ module.exports = function (the_app, DAL) {
             validationResult.message = "Failed SCORM Profile validation with " +validatedresponse.errors.length + " error(s)";
             for (var idx in validatedresponse.errors) {
                 var errinfo = validatedresponse.errors[idx];
-                validationResult.errors.push({property: errinfo.property, message: errinfo.instance + " " + errinfo.message});
+                validationResult.errors.push({property: errinfo.property.replace("instance", "statement"), message: errinfo.instance + " " + errinfo.message});
             }
             validationResult.schema.id = schema.id;
             var parts = schema.id.split('/');
