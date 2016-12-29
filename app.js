@@ -26,6 +26,9 @@ var debug = require('debug')('scorm-profile-viewer:app');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hjs');
 
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/schemas', express.static('schemas'));
+
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
@@ -42,8 +45,6 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/schemas', express.static('schemas'));
 
 // enable CORS
 app.use(function(req, res, next) {

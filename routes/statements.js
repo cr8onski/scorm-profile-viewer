@@ -69,9 +69,10 @@ module.exports = function (the_app, DAL) {
                 id: "",
                 link: ""
             },
-            results: undefined,
+            errors: [],
             statement: stmt
         };
+        // errors obj {property:String, message:String}
 
         var channel = req.user.id + "-validation-report";
         debug('emitting on channel', channel);
@@ -79,8 +80,8 @@ module.exports = function (the_app, DAL) {
         // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
-            validationResult.message = "Failed xAPI Statement validation with " + report.totalErrors + "error(s)";
-            validationResult.results = report.results;
+            validationResult.message = "Failed xAPI Statement validation with " + report.totalErrors + " error(s)";
+            validationResult.errors = report.results[0].errors;
             validationResult.schema = undefined;
             io.emit(channel, validationResult);
             res.status(400).send("Bad Request - " + validationResult.message);
@@ -100,7 +101,7 @@ module.exports = function (the_app, DAL) {
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
             validationResult.message = "Failed SCORM Profile validation with " +validatedresponse.errors.length + " error(s)";
-            validationResult.results = validatedresponse.errors;
+            validationResult.errors = validatedresponse.errors;
             validationResult.schema.id = schema.id;
             var parts = schema.id.split('/');
             validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
@@ -110,11 +111,10 @@ module.exports = function (the_app, DAL) {
         } else {
             validationResult.message = "OK";
             validationResult.success = true;
-            validationResult.results = undefined;
             validationResult.schema.id = schema.id;
             var parts = schema.id.split('/');
             validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
-            io.emit(channel, msg);
+            io.emit(channel, validationResult);
             res.status(200).json([validationResult.statement.id]);
         }
 

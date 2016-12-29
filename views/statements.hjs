@@ -10,12 +10,28 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-        socket.on('{{ streamid }}-validation-report', function(msg){
-            console.log(msg);
+        socket.on('{{ streamid }}-validation-report', function(result){
+            console.log(result);
             var ul = document.getElementById('results');
             var li = document.createElement('li');
-            li.innerHTML = msg;
+            li.innerHTML = (result.success)?"Success!":"Fail";
             ul.appendChild(li);
+            var subul = document.createElement('ul');
+            ul.appendChild(subul);
+            li = document.createElement('li');
+            li.innerHTML = "message: " + result.message;
+            subul.appendChild(li);
+            if (result.schema) {
+                li = document.createElement('li');
+                li.innerHTML = "Tested against: <a href='" + result.schema.link + "'>" + result.schema.id + "</a>";
+                subul.appendChild(li);
+            }
+            if (result.results) {
+                li = document.createElement('li');
+                li.innerHTML = "this should hold the errors in result.results";
+                subul.appendChild(li);
+            }
+            
         });
     </script>
 </body>
