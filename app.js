@@ -43,6 +43,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/schemas', express.static('schemas'));
 
 // enable CORS
 app.use(function(req, res, next) {

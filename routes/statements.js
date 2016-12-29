@@ -11,7 +11,7 @@ var validateStatement = (new stmtvalidator()).validateStatement;
 var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
 
 var schemas = {
-    "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema'),
+    "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema.json'),
     "http://adlnet.gov/expapi/verbs/terminated": require('../schemas/scorm.profile.terminating.attempt.schema.json'),
     "http://adlnet.gov/expapi/verbs/resumed": require('../schemas/scorm.profile.resuming.attempt.schema.json'),
     "http://adlnet.gov/expapi/verbs/suspended": require('../schemas/scorm.profile.suspending.attempt.schema.json')
@@ -58,40 +58,64 @@ module.exports = function (the_app, DAL) {
 
     router.post('/', testAuth, function (req, res, next) {
         var io = req.app.get('socket.io');
+        
+        var stmt = req.body;
+        stmt.id = stmt.id || uuid.v4();
+        
+        var validationResult = {
+            success: false,
+            message: "",
+            schema: {
+                id: "",
+                link: ""
+            },
+            results: undefined,
+            statement: stmt
+        };
 
         var channel = req.user.id + "-validation-report";
         debug('emitting on channel', channel);
-
-        var stmt = req.body;
-
-        var schema = schemas[stmt.verb.id];
-        if (!schema) {
-            var msg = {
-                result: "statement didn't match a schema.. unvalidated"
-            };
-            io.emit(channel, msg);
-            res.status(400).send("Bad Request - " + msg.result);
-            return;
-        }
-
+        
+        // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
-            io.emit(channel, report.results);
-            res.status(400).send("Bad Request = " + JSON.stringify(report.results));
+            validationResult.message = "Failed xAPI Statement validation with " + report.totalErrors + "error(s)";
+            validationResult.results = report.results;
+            validationResult.schema = undefined;
+            io.emit(channel, validationResult);
+            res.status(400).send("Bad Request - " + validationResult.message);
+            return;
+        }
+        
+        // find schema
+        var schema = schemas[stmt.verb.id];
+        if (!schema) {
+            validationResult.message = "statement didn't match a schema.. unvalidated";
+            io.emit(channel, validationResult);
+            res.status(400).send("Bad Request - " + validationResult.message);
             return;
         }
 
+        // validate against schema
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
-            io.emit(channel, validatedresponse.errors);
-            res.status(400).send("Bad Request - " + JSON.stringify(validatedresponse.errors));
+            validationResult.message = "Failed SCORM Profile validation with " +validatedresponse.errors.length + " error(s)";
+            validationResult.results = validatedresponse.errors;
+            validationResult.schema.id = schema.id;
+            var parts = schema.id.split('/');
+            validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
+            
+            io.emit(channel, validationResult);
+            res.status(400).send("Bad Request - " + validationResult.message);
         } else {
-            var msg = {
-                result: "OK",
-                schema: schema.id
-            };
+            validationResult.message = "OK";
+            validationResult.success = true;
+            validationResult.results = undefined;
+            validationResult.schema.id = schema.id;
+            var parts = schema.id.split('/');
+            validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
             io.emit(channel, msg);
-            res.status(200).json([req.body.id || uuid.v4()]);
+            res.status(200).json([validationResult.statement.id]);
         }
 
     });
