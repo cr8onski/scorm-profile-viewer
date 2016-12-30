@@ -61,18 +61,6 @@ module.exports = function (the_app, DAL) {
         
         var stmt = req.body;
         stmt.id = stmt.id || uuid.v4();
-        
-        var validationResult = {
-            success: false,
-            message: "",
-            schema: {
-                id: "",
-                link: ""
-            },
-            errors: [],
-            statement: stmt
-        };
-        // errors obj {property:String, message:String}
 
         var channel = req.user.id + "-validation-report";
         debug('emitting on channel', channel);
@@ -80,50 +68,35 @@ module.exports = function (the_app, DAL) {
         // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
-            validationResult.message = "Failed xAPI Statement validation with " + report.totalErrors + " error(s)";
-            
-            var reportresults = report.results[0];
-            for (var idx in reportresults.errors) {
-                var errinfo = reportresults.errors[idx];
-                validationResult.errors.push({property: errinfo.trace, message: errinfo.message});
-            }
-            validationResult.schema = undefined;
-            io.emit(channel, validationResult);
-            res.status(400).send("Bad Request - " + validationResult.message);
+            DAL.createValidationResult(null, stmt, report, null, function(err, validationResult) {
+                io.emit(channel, validationResult);
+                res.status(400).send("Bad Request - " + validationResult.message);
+            });
             return;
         }
         
         // find schema
         var schema = schemas[stmt.verb.id];
         if (!schema) {
-            validationResult.message = "Statement didn't match a schema.. unvalidated";
-            io.emit(channel, validationResult);
-            res.status(400).send("Bad Request - " + validationResult.message);
+            DAL.createValidationResult(new Error("Statement didn't match a schema.. unvalidated"), stmt, null, null, function(err, validationResult) {
+                io.emit(channel, validationResult);
+                res.status(400).send("Bad Request - " + validationResult.message);
+            });
             return;
         }
 
         // validate against schema
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
-            validationResult.message = "Failed SCORM Profile validation with " +validatedresponse.errors.length + " error(s)";
-            for (var idx in validatedresponse.errors) {
-                var errinfo = validatedresponse.errors[idx];
-                validationResult.errors.push({property: errinfo.property.replace("instance", "statement"), message: errinfo.instance + " " + errinfo.message});
-            }
-            validationResult.schema.id = schema.id;
-            var parts = schema.id.split('/');
-            validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
-            
-            io.emit(channel, validationResult);
-            res.status(400).send("Bad Request - " + validationResult.message);
+            DAL.createValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult) {
+                io.emit(channel, validationResult);
+                res.status(400).send("Bad Request - " + validationResult.message);
+            });
         } else {
-            validationResult.message = "OK";
-            validationResult.success = true;
-            validationResult.schema.id = schema.id;
-            var parts = schema.id.split('/');
-            validationResult.schema.link = "/schemas/" + parts[parts.length - 1] + ".json";
-            io.emit(channel, validationResult);
-            res.status(200).json([validationResult.statement.id]);
+            DAL.createValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult){
+                io.emit(channel, validationResult);
+                res.status(200).json([validationResult.statement.id]);
+            })
         }
 
     });

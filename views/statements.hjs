@@ -21,17 +21,17 @@
             li = document.createElement('li');
             li.innerHTML = result.message;
             subul.appendChild(li);
-            if (result.schema) {
+            if (result.jsonschema) {
                 li = document.createElement('li');
-                li.innerHTML = "Tested against: <a href='" + result.schema.link + "'>" + result.schema.id + "</a>";
+                li.innerHTML = "Tested against: <a href='" + result.jsonschema.link + "'>" + result.jsonschema.id + "</a>";
                 subul.appendChild(li);
             }
-            if (result.errors) {
+            if (result.errorset) {
                 var errul = document.createElement('ul');
                 subul.appendChild(errul);
-                for (var idx in result.errors) {
+                for (var idx in result.errorset) {
                     li = document.createElement('li');
-                    li.innerHTML = result.errors[idx].message + " @ " + result.errors[idx].property;
+                    li.innerHTML = result.errorset[idx].message + " @ " + result.errorset[idx].property;
                     errul.appendChild(li);
                 }
             }
