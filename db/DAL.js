@@ -76,4 +76,4 @@ DAL.prototype.createValidationResult = function (err, stmt, report, schema, cb) 
     }
 };
 
-module.exports.DAL = DAL;
+module.exports.DAL = new DAL();

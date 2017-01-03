@@ -4,8 +4,10 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
 
+var DAL = require('../db/DAL').DAL;
 
-module.exports = function(the_app, DAL){
+
+module.exports = function(the_app){
     
     passport.use(new LocalStrategy(
         function(username, password, done) {

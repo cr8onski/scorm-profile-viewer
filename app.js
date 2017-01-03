@@ -39,8 +39,7 @@ app.use(session({
     secret: 'ants ate my sandwich', 
     cookie: { maxAge: 60000},
     resave: false,
-    saveUninitialized: false,
-    store: new MongoStore({mongooseConnection: mongoose.connection})
+    saveUninitialized: false
 }));
 
 app.use(passport.initialize());
@@ -54,21 +53,13 @@ app.use(function(req, res, next) {
 });
 
 async.series([
-    function doDatabase(cb) {        
-        // connect to mongo
-        db.on('error', console.error.bind(console, 'connection error: '));
-        db.once('open', function() {
-            mydal = new (require('./db/DAL').DAL)();
-            app.set('DAL', mydal);
-            cb();
-        });
-    },
     function setupPassport(cb) {
         passport.serializeUser(function(user, done) {
             done(null, user.id);
         });
 
         passport.deserializeUser(function(id, done) {
+            var mydal = require('./db/DAL').DAL;
             mydal.findUserById(id, function(err, user) {
                 done(err, user);
             });
@@ -79,9 +70,9 @@ async.series([
     function startServer() {
         // routes
         var routes = require('./routes/index');
-        var users = require('./routes/users')(app, mydal);
-        var statements = require('./routes/statements')(app, mydal);
-        var inspect = require('./routes/inspect')(app, mydal);
+        var users = require('./routes/users')(app);
+        var statements = require('./routes/statements')(app);
+        var inspect = require('./routes/inspect')(app);
         app.use('/', routes);
         app.use('/users', users);
         app.use('/statements', statements);

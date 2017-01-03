@@ -4,6 +4,8 @@ var debug = require('debug')('scorm-profile-viewer:statements');
 
 var uuid = require('node-uuid');
 
+var DAL = require('../db/DAL').DAL;
+
 var validate = require('jsonschema').validate;
 var stmtvalidator = require('../lib/stmtvalidator').Validator;
 var validateStatement = (new stmtvalidator()).validateStatement;
@@ -17,7 +19,7 @@ var schemas = {
     "http://adlnet.gov/expapi/verbs/suspended": require('../schemas/scorm.profile.suspending.attempt.schema.json')
 };
 
-module.exports = function (the_app, DAL) {
+module.exports = function (the_app) {
 
     var testAuth = function (req, res, next) {
         var auth = req.get("authorization");
@@ -43,7 +45,7 @@ module.exports = function (the_app, DAL) {
                     } else {
                         debug('valid password on existing user -- all good')
                         req.user = user;
-                        next();
+                        return next();
                     }
                 });
             });
