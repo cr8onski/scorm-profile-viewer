@@ -4,6 +4,8 @@ var debug = require('debug')('scorm-profile-viewer:statements');
 
 var uuid = require('node-uuid');
 
+var DAL = require('../db/DAL').DAL;
+
 var validate = require('jsonschema').validate;
 var stmtvalidator = require('../lib/stmtvalidator').Validator;
 var validateStatement = (new stmtvalidator()).validateStatement;
@@ -11,13 +13,13 @@ var validateStatement = (new stmtvalidator()).validateStatement;
 var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
 
 var schemas = {
-    "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema'),
+    "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema.json'),
     "http://adlnet.gov/expapi/verbs/terminated": require('../schemas/scorm.profile.terminating.attempt.schema.json'),
     "http://adlnet.gov/expapi/verbs/resumed": require('../schemas/scorm.profile.resuming.attempt.schema.json'),
     "http://adlnet.gov/expapi/verbs/suspended": require('../schemas/scorm.profile.suspending.attempt.schema.json')
 };
 
-module.exports = function (the_app, DAL) {
+module.exports = function (the_app) {
 
     var testAuth = function (req, res, next) {
         var auth = req.get("authorization");
@@ -43,7 +45,7 @@ module.exports = function (the_app, DAL) {
                     } else {
                         debug('valid password on existing user -- all good')
                         req.user = user;
-                        next();
+                        return next();
                     }
                 });
             });
@@ -53,45 +55,51 @@ module.exports = function (the_app, DAL) {
     /* GET home page. */
     router.get('/', function (req, res, next) {
         res.append('X-Experience-API-Consistent-Through', (new Date('1 January 1971 00:00 UTC')).toISOString());
-        res.status(200).json([]);
+        return res.status(200).json([]);
     });
 
     router.post('/', testAuth, function (req, res, next) {
         var io = req.app.get('socket.io');
-
-        var channel = req.user.id + "-validation-report";
-        debug('emitting on channel', channel);
-
+        var user = req.user;
+        
         var stmt = req.body;
+        stmt.id = stmt.id || uuid.v4();
 
-        var schema = schemas[stmt.verb.id];
-        if (!schema) {
-            var msg = {
-                result: "statement didn't match a schema.. unvalidated"
-            };
-            io.emit(channel, msg);
-            res.status(400).send("Bad Request - " + msg.result);
-            return;
-        }
-
+        var channel = user.id + "-validation-report";
+        debug('emitting on channel', channel);
+        
+        // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
-            io.emit(channel, report.results);
-            res.status(400).send("Bad Request = " + JSON.stringify(report.results));
+            user.saveValidationResult(null, stmt, report, null, function(err, validationResult) {
+                io.emit(channel, validationResult);
+                return res.status(400).send("Bad Request - " + validationResult.message);
+            });
+            return;
+        }
+        
+        // find schema
+        var schema = schemas[stmt.verb.id];
+        if (!schema) {
+            user.saveValidationResult(new Error("Statement didn't match a schema.. unvalidated"), stmt, null, null, function(err, validationResult) {
+                io.emit(channel, validationResult);
+                return res.status(400).send("Bad Request - " + validationResult.message);
+            });
             return;
         }
 
+        // validate against schema
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
-            io.emit(channel, validatedresponse.errors);
-            res.status(400).send("Bad Request - " + JSON.stringify(validatedresponse.errors));
+            user.saveValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult) {
+                io.emit(channel, validationResult);
+                return res.status(400).send("Bad Request - " + validationResult.message);
+            });
         } else {
-            var msg = {
-                result: "OK",
-                schema: schema.id
-            };
-            io.emit(channel, msg);
-            res.status(200).json([req.body.id || uuid.v4()]);
+            user.saveValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult){
+                io.emit(channel, validationResult);
+                return res.status(200).json([validationResult.statement.id]);
+            })
         }
 
     });

@@ -1,6 +1,7 @@
 var mongoose = require('mongoose');
 var debug = require('debug')('scorm-profile-viewer:DAL');
 var User = require('./models/user');
+var ValRes = require('./models/validationResult');
 
 function DAL () {}
 
@@ -17,17 +18,17 @@ DAL.prototype.createUser = function(username, password, cb) {
     User.hashPassword(password, function(err, hashedword, salt) {
         var newuser = new User({username: username, password:hashedword, salt: salt});
         newuser.save(function(err) {
-            if (err) cb(err);
-            else cb(null, newuser);
+            if (err) return cb(err);
+            return cb(null, newuser);
         });
     });
 };
 
 DAL.prototype.validatePassword = function(user, password, cb) {
     User.hashPassword(password, user.salt, function (err, pwrdhash, salt) {
-        if (err) cb(err);
-        else if (pwrdhash !== user.password) cb(null, false);
-        else cb(null, true);
+        if (err) return cb(err);
+        if (pwrdhash !== user.password) return cb(null, false);
+        else return cb(null, true);
     });
 }
 
@@ -35,5 +36,4 @@ DAL.prototype.validPassword = function(user, password) {
     return user.password === User.hashPassword(password);
 };
 
-
-module.exports.DAL = DAL;
+module.exports.DAL = new DAL();
