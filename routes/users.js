@@ -44,20 +44,20 @@ module.exports = function(the_app){
 
     /* GET users listing. */
     router.get('/', mustBeLoggedIn, function(req, res, next) {
-        res.render('user', {'user':req.user});
+        return res.render('user', {'user':req.user});
     });
 
     router.get('/login', function(req, res, next) {
         debug("in get login .. r: ", req.query.r);
-        res.render('login', {r: req.query.r});
+        return res.render('login', {r: req.query.r});
     });
 
     router.post('/login', 
         passport.authenticate('local'),
         function(req, res, next) {
             //look for param r
-            if (req.query.r) res.redirect(decodeURIComponent(req.query.r));
-            else res.redirect('./')
+            if (req.query.r) return res.redirect(decodeURIComponent(req.query.r));
+            else return res.redirect('./')
             // otherwise redirect to /
         }
     );
@@ -65,7 +65,7 @@ module.exports = function(the_app){
     router.get('/logout', function(req, res, next) {
         if(req.user) req.logout();
         
-        res.redirect('/');
+        return res.redirect('/');
     });
     
     return router;

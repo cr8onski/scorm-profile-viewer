@@ -4,7 +4,7 @@ var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
 
 module.exports = function(the_app) {
     router.get('/:streamid/statements', mustBeLoggedIn, function(req, res, next) {
-        res.render('statements', { title: 'Express - Statements endpoint!', streamid: req.params.streamid });
+        return res.render('statements', { title: 'Express - Statements endpoint!', streamid: req.params.streamid });
     });
     
     return router;  

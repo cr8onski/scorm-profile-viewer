@@ -18,17 +18,17 @@ DAL.prototype.createUser = function(username, password, cb) {
     User.hashPassword(password, function(err, hashedword, salt) {
         var newuser = new User({username: username, password:hashedword, salt: salt});
         newuser.save(function(err) {
-            if (err) cb(err);
-            else cb(null, newuser);
+            if (err) return cb(err);
+            return cb(null, newuser);
         });
     });
 };
 
 DAL.prototype.validatePassword = function(user, password, cb) {
     User.hashPassword(password, user.salt, function (err, pwrdhash, salt) {
-        if (err) cb(err);
-        else if (pwrdhash !== user.password) cb(null, false);
-        else cb(null, true);
+        if (err) return cb(err);
+        if (pwrdhash !== user.password) return cb(null, false);
+        else return cb(null, true);
     });
 }
 
@@ -43,7 +43,7 @@ DAL.prototype.createValidationResult = function (err, stmt, report, schema, cb) 
     // if no report, message was that no schema matched
     if (err) {
         vr.message = err.message;
-        vr.save(cb);
+        return vr.save(cb);
     }
     else if (report.totalErrors > 0) {
         // results of failed xapi statement
@@ -53,7 +53,7 @@ DAL.prototype.createValidationResult = function (err, stmt, report, schema, cb) 
             var errinfo = report.results[0].errors[idx];
             vr.errorset.push({property: errinfo.trace, message: errinfo.message});
         }
-        vr.save(cb);
+        return vr.save(cb);
     } else {
         // results against schema
         if (report.errors.length > 0) {
@@ -72,7 +72,7 @@ DAL.prototype.createValidationResult = function (err, stmt, report, schema, cb) 
             var parts = schema.id.split('/');
             vr.jsonschema.link = "/schemas/" + parts[parts.length - 1] + ".json";
         }
-        vr.save(cb);
+        return vr.save(cb);
     }
 };
 

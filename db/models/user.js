@@ -4,10 +4,18 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const crypto = require('crypto');
 
-var isEmail = require('validator').isEmail;
-var schema = require('../mongooseSchemas/user');
-schema.username.validate = [isEmail, 'invalid username, must be email'];
-var UserSchema = new Schema(schema);
+var UserSchema = new Schema({
+    username: {
+        type: String,
+        unique: true,
+        trim: true,
+        lowercase: true,
+        required: true,
+        validate: [require('validator').isEmail, 'invalid username, must be email']
+    },
+    password: String,
+    salt: String
+});
 
 
 const LEN = 256;

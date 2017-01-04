@@ -55,7 +55,7 @@ module.exports = function (the_app) {
     /* GET home page. */
     router.get('/', function (req, res, next) {
         res.append('X-Experience-API-Consistent-Through', (new Date('1 January 1971 00:00 UTC')).toISOString());
-        res.status(200).json([]);
+        return res.status(200).json([]);
     });
 
     router.post('/', testAuth, function (req, res, next) {
@@ -72,7 +72,7 @@ module.exports = function (the_app) {
         if (report.totalErrors > 0) {
             DAL.createValidationResult(null, stmt, report, null, function(err, validationResult) {
                 io.emit(channel, validationResult);
-                res.status(400).send("Bad Request - " + validationResult.message);
+                return res.status(400).send("Bad Request - " + validationResult.message);
             });
             return;
         }
@@ -82,7 +82,7 @@ module.exports = function (the_app) {
         if (!schema) {
             DAL.createValidationResult(new Error("Statement didn't match a schema.. unvalidated"), stmt, null, null, function(err, validationResult) {
                 io.emit(channel, validationResult);
-                res.status(400).send("Bad Request - " + validationResult.message);
+                return res.status(400).send("Bad Request - " + validationResult.message);
             });
             return;
         }
@@ -92,12 +92,12 @@ module.exports = function (the_app) {
         if (validatedresponse.errors.length > 0) {
             DAL.createValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult) {
                 io.emit(channel, validationResult);
-                res.status(400).send("Bad Request - " + validationResult.message);
+                return res.status(400).send("Bad Request - " + validationResult.message);
             });
         } else {
             DAL.createValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult){
                 io.emit(channel, validationResult);
-                res.status(200).json([validationResult.statement.id]);
+                return res.status(200).json([validationResult.statement.id]);
             })
         }
 
