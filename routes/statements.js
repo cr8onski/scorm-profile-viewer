@@ -60,17 +60,18 @@ module.exports = function (the_app) {
 
     router.post('/', testAuth, function (req, res, next) {
         var io = req.app.get('socket.io');
+        var user = req.user;
         
         var stmt = req.body;
         stmt.id = stmt.id || uuid.v4();
 
-        var channel = req.user.id + "-validation-report";
+        var channel = user.id + "-validation-report";
         debug('emitting on channel', channel);
         
         // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
-            DAL.createValidationResult(null, stmt, report, null, function(err, validationResult) {
+            user.saveValidationResult(null, stmt, report, null, function(err, validationResult) {
                 io.emit(channel, validationResult);
                 return res.status(400).send("Bad Request - " + validationResult.message);
             });
@@ -80,7 +81,7 @@ module.exports = function (the_app) {
         // find schema
         var schema = schemas[stmt.verb.id];
         if (!schema) {
-            DAL.createValidationResult(new Error("Statement didn't match a schema.. unvalidated"), stmt, null, null, function(err, validationResult) {
+            user.saveValidationResult(new Error("Statement didn't match a schema.. unvalidated"), stmt, null, null, function(err, validationResult) {
                 io.emit(channel, validationResult);
                 return res.status(400).send("Bad Request - " + validationResult.message);
             });
@@ -90,12 +91,12 @@ module.exports = function (the_app) {
         // validate against schema
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
-            DAL.createValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult) {
+            user.saveValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult) {
                 io.emit(channel, validationResult);
                 return res.status(400).send("Bad Request - " + validationResult.message);
             });
         } else {
-            DAL.createValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult){
+            user.saveValidationResult(null, stmt, validatedresponse, schema, function (err, validationResult){
                 io.emit(channel, validationResult);
                 return res.status(200).json([validationResult.statement.id]);
             })
