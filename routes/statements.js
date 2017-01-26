@@ -5,12 +5,11 @@ var debug = require('debug')('scorm-profile-viewer:statements');
 var uuid = require('node-uuid');
 
 var DAL = require('../db/DAL').DAL;
+var testAuth = require('../lib/util').testAuth;
 
 var validate = require('jsonschema').validate;
 var stmtvalidator = require('../lib/stmtvalidator').Validator;
 var validateStatement = (new stmtvalidator()).validateStatement;
-
-var mustBeLoggedIn = require('../lib/util').mustBeLoggedIn;
 
 var schemas = {
     "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema.json'),
@@ -20,38 +19,6 @@ var schemas = {
 };
 
 module.exports = function (the_app) {
-
-    var testAuth = function (req, res, next) {
-        var auth = req.get("authorization");
-
-        if (!auth) {
-            res.set("WWW-Authenticate", "Basic realm=\"Authorization Required\"");
-            return res.status(401).send("Authorization Required");
-        } else {
-            var credentials = new Buffer(auth.split(" ").pop(), "base64").toString("ascii").split(":");
-            var username = credentials[0],
-                password = credentials[1];
-
-            DAL.getUser(username, function (err, user) {
-                if (err || !user) {
-                    debug('got error in auth verification - getUser');
-                    return res.status(403).send("Access Denied (incorrect credentials)");
-                }
-
-                DAL.validatePassword(user, password, function (err, valid) {
-                    if (err || !valid) {
-                        debug('invalid password on existing user');
-                        return res.status(403).send("Access Denied (incorrect credentials)");
-                    } else {
-                        debug('valid password on existing user -- all good')
-                        req.user = user;
-                        return next();
-                    }
-                });
-            });
-        }
-    };
-
     /* GET home page. */
     router.get('/', function (req, res, next) {
         res.append('X-Experience-API-Consistent-Through', (new Date('1 January 1971 00:00 UTC')).toISOString());
@@ -61,13 +28,13 @@ module.exports = function (the_app) {
     router.post('/', testAuth, function (req, res, next) {
         var io = req.app.get('socket.io');
         var user = req.user;
-        
+
         var stmt = req.body;
         stmt.id = stmt.id || uuid.v4();
 
-        var channel = user.id + "-validation-report";
+        var channel = user.id + "-statement-validation-report";
         debug('emitting on channel', channel);
-        
+
         // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
@@ -77,7 +44,7 @@ module.exports = function (the_app) {
             });
             return;
         }
-        
+
         // find schema
         var schema = schemas[stmt.verb.id];
         if (!schema) {

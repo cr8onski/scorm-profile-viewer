@@ -6,11 +6,11 @@
 <body>
     <h1>Statement Results</h1>
     <ul id="results"></ul>
-    
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-        socket.on('{{ streamid }}-validation-report', function(result){
+        socket.on('{{ streamid }}-statement-validation-report', function(result){
             console.log(result);
             var ul = document.getElementById('results');
             var li = document.createElement('li');
@@ -35,7 +35,7 @@
                     errul.appendChild(li);
                 }
             }
-            
+
         });
     </script>
 </body>
