@@ -74,11 +74,13 @@ async.series([
         var statements = require('./routes/statements')(app);
         var inspect = require('./routes/inspect')(app);
         var agents = require('./routes/agents')(app);
+        var activities = require('./routes/activities')(app);
         app.use('/', routes);
         app.use('/users', users);
         app.use('/statements', statements);
         app.use('/inspect', inspect);
         app.use('/agents', agents);
+        app.use('/activities', activities);
 
         // catch 404 and forward to error handler
         app.use(function(req, res, next) {

@@ -3,14 +3,11 @@ var debug = require('debug')('scorm-profile-viewer:agents');
 var validate = require('jsonschema').validate;
 var testAuth = require('../lib/util').testAuth;
 var agentprofileschema = require('../schemas/scorm.profile.agent.profile.schema.json');
+var testForParams = require('../lib/util').testForParams;
 
-var testForAgentParam = function (req, res, next) {
-    if (!req.query.agent) return res.status(400).send("Bad Request - missing agent param");
-    return next();
-}
 
 module.exports = function (the_app) {
-    router.get('/', testAuth, testForAgentParam, function(req, res, next) {
+    router.get('/', testAuth, testForParams(['agent']), function(req, res, next) {
         var agent = req.query.agent && JSON.parse(req.query.agent);
         var person = {objectType: "Person"};
         if (agent.name) person.name = [agent.name];
@@ -25,7 +22,9 @@ module.exports = function (the_app) {
         return res.status(204).send("No Content");
     });
 
-    router.post('/profile', testAuth, testForAgentParam, function(req, res, next) {
+    router.post('/profile', testAuth, testForParams(['agent', 'profileId']), function(req, res, next) {
+        // TODO: channel info to IO, instead of response
+        // TODO: save profiles to db
         var io = req.app.get('socket.io');
         var user = req.user;
 
@@ -34,9 +33,13 @@ module.exports = function (the_app) {
         var channel = user.id + "-document-validation-report";
         debug('emitting on channel', channel);
 
+        if (req.query.profileId !== "https://w3id.org/xapi/scorm/agent-profile")
+            return res.status(200)
+                      .send(`Not Tested -- your profileId ${req.query.profileId} didn't match one defined in the xAPI SCORM Profile`);
+
         var valresult = validate(profile, agentprofileschema);
 
-        res.status(200).json(valresult);
+        return res.status(200).json(valresult);
         // return res.status(204).send("No Content");
     });
     return router;
