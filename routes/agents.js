@@ -2,6 +2,7 @@ var router = require('express').Router();
 var debug = require('debug')('scorm-profile-viewer:agents');
 var validate = require('jsonschema').validate;
 var testAuth = require('../lib/util').testAuth;
+var agentprofileschema = require('../schemas/scorm.profile.agent.profile.schema.json');
 
 var testForAgentParam = function (req, res, next) {
     if (!req.query.agent) return res.status(400).send("Bad Request - missing agent param");
@@ -32,7 +33,11 @@ module.exports = function (the_app) {
 
         var channel = user.id + "-document-validation-report";
         debug('emitting on channel', channel);
-        return res.status(204).send("No Content");
+
+        var valresult = validate(profile, agentprofileschema);
+
+        res.status(200).json(valresult);
+        // return res.status(204).send("No Content");
     });
     return router;
 };
