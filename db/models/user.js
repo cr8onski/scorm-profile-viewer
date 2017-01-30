@@ -66,8 +66,11 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
     if (err) {
         vr.message = err.message;
         this.validationresults.push(vr);
-        var doc = this.validationresults[0];
-        return cb(null, doc);
+        this.save(function(err, thisuser) {
+            if (err) return cb(err);
+            var doc = thisuser.validationresults[0];
+            return cb(null, doc);
+        });
     }
     else if (report.totalErrors > 0) {
         // results of failed xapi statement
@@ -78,8 +81,11 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
             vr.errorset.push({property: errinfo.trace, message: errinfo.message});
         }
         this.validationresults.push(vr);
-        var doc = this.validationresults[0];
-        return cb(null, doc);
+        this.save(function(err, thisuser) {
+            if (err) return cb(err);
+            var doc = thisuser.validationresults[0];
+            return cb(null, doc);
+        });
     } else {
         // results against schema
         if (report.errors.length > 0) {
@@ -99,8 +105,11 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
             vr.jsonschema.link = "/schemas/" + parts[parts.length - 1] + ".json";
         }
         this.validationresults.push(vr);
-        var doc = this.validationresults[0];
-        return cb(null, doc);
+        this.save(function(err, thisuser) {
+            if (err) return cb(err);
+            var doc = thisuser.validationresults[0];
+            return cb(null, doc);
+        });
     }
 };
 
