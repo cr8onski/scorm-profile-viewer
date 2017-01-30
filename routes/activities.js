@@ -10,7 +10,9 @@ var activityprofileschema = require('../schemas/scorm.profile.activity.profile.s
 // state: activityid, agent, stateid for POST and single GET, activityid, agent for multi GET
 // profile: activityid
 module.exports = function (the_app) {
-    router.get('/', function(req, res, next){});
+    router.get('/', testAuth, testForParams(['activityId']), function(req, res, next){
+        return res.status(200).json({"objectType":"Activity", "id":req.query.activityId});
+    });
 
     router.post('/state', testAuth, testForParams(['activityId', 'agent', 'stateId']), function(req, res, next) {
         // TODO: channel info to IO, instead of response
