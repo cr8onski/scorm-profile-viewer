@@ -30,11 +30,17 @@ module.exports = function (the_app) {
             return res.status(200)
                       .send(`Not Tested -- your stateId ${stateId} didn't match one defined in the xAPI SCORM Profile`);
 
-        const valresult = validate(actdoc, (stateId === "https://w3id.org/xapi/scorm/attempt-state") ?
-                                            attemptstateschema : activitystateschema);
+        var curschema = (stateId === "https://w3id.org/xapi/scorm/attempt-state") ?
+                                            attemptstateschema : activitystateschema;
 
-        return res.status(200).json(valresult);
-        // return res.status(204).send("No Content");
+        const valresult = validate(actdoc, curschema);
+
+        user.saveValidationResult(null,
+            actdoc, stateId.slice(stateId.lastIndexOf('/') +1),
+            valresult, curschema,
+            function (err, validationResult){
+                return res.status(200).json(validationResult);
+        });
     });
 
     router.post('/profile', testAuth, testForParams(['activityId', 'profileId']), function(req, res, next) {
@@ -47,13 +53,20 @@ module.exports = function (the_app) {
         const channel = user.id + "-document-validation-report";
         debug('emitting on channel', channel);
 
-        if (req.query.profileId !== "https://w3id.org/xapi/scorm/activity-profile")
+        const profileId = req.query.profileId;
+        if (profileId !== "https://w3id.org/xapi/scorm/activity-profile")
             return res.status(200)
-                      .send(`Not Tested -- your profileId ${req.query.profileId} didn't match one defined in the xAPI SCORM Profile`);
+                      .send(`Not Tested -- your profileId ${profileId} didn't match one defined in the xAPI SCORM Profile`);
 
         const valresult = validate(actdoc, activityprofileschema);
 
-        return res.status(200).json(valresult);
+        user.saveValidationResult(null,
+            actdoc, profileId.slice(profileId.lastIndexOf('/') +1),
+            valresult, activityprofileschema,
+            function (err, validationResult){
+                debug('VR: ', validationResult);
+                return res.status(200).json(validationResult);
+        });
     });
 
     return router;

@@ -59,8 +59,8 @@ UserSchema.statics.hashPassword = function(password, salt, cb) {
 
 var User = mongoose.model('User', UserSchema);
 
-User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
-    var vr = this.validationresults.create({statement: stmt});
+User.prototype.saveValidationResult = function (err, doc, type, report, schema, cb) {
+    var vr = this.validationresults.create({document: doc, type: type});
 
     // if no report, message was that no schema matched
     if (err) {
@@ -68,7 +68,7 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
         this.validationresults.push(vr);
         this.save(function(err, thisuser) {
             if (err) return cb(err);
-            var doc = thisuser.validationresults[0];
+            var doc = thisuser.validationresults[thisuser.validationresults.length-1];
             return cb(null, doc);
         });
     }
@@ -83,7 +83,7 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
         this.validationresults.push(vr);
         this.save(function(err, thisuser) {
             if (err) return cb(err);
-            var doc = thisuser.validationresults[0];
+            var doc = thisuser.validationresults[thisuser.validationresults.length-1];
             return cb(null, doc);
         });
     } else {
@@ -92,7 +92,7 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
             vr.message = "Failed SCORM Profile validation with " +report.errors.length + " error(s)";
             for (var idx in report.errors) {
                 var errinfo = report.errors[idx];
-                vr.errorset.push({property: errinfo.property.replace("instance", "statement"), message: errinfo.instance + " " + errinfo.message});
+                vr.errorset.push({property: errinfo.property.replace("instance", "document"), message: errinfo.instance + " " + errinfo.message});
             }
             vr.jsonschema.id = schema.id;
             var parts = schema.id.split('/');
@@ -107,7 +107,7 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
         this.validationresults.push(vr);
         this.save(function(err, thisuser) {
             if (err) return cb(err);
-            var doc = thisuser.validationresults[0];
+            var doc = thisuser.validationresults[thisuser.validationresults.length-1];
             return cb(null, doc);
         });
     }

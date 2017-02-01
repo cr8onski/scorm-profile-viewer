@@ -33,14 +33,21 @@ module.exports = function (the_app) {
         var channel = user.id + "-document-validation-report";
         debug('emitting on channel', channel);
 
-        if (req.query.profileId !== "https://w3id.org/xapi/scorm/agent-profile")
+        const profileId = req.query.profileId;
+
+        if (profileId !== "https://w3id.org/xapi/scorm/agent-profile")
             return res.status(200)
-                      .send(`Not Tested -- your profileId ${req.query.profileId} didn't match one defined in the xAPI SCORM Profile`);
+                      .send(`Not Tested -- your profileId ${profileId} didn't match one defined in the xAPI SCORM Profile`);
 
         var valresult = validate(profile, agentprofileschema);
 
-        return res.status(200).json(valresult);
-        // return res.status(204).send("No Content");
+        user.saveValidationResult(null,
+            profile, profileId.slice(profileId.lastIndexOf('/') +1),
+            valresult, agentprofileschema,
+            function (err, validationResult){
+                return res.status(200).json(validationResult);
+                // return res.status(204).send("No Content");
+        });
     });
     return router;
 };
