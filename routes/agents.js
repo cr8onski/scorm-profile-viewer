@@ -23,8 +23,6 @@ module.exports = function (the_app) {
     });
 
     router.post('/profile', testAuth, testForParams(['agent', 'profileId']), function(req, res, next) {
-        // TODO: channel info to IO, instead of response
-        // TODO: save profiles to db
         var io = req.app.get('socket.io');
         var user = req.user;
 
@@ -36,7 +34,7 @@ module.exports = function (the_app) {
         const profileId = req.query.profileId;
 
         if (profileId !== "https://w3id.org/xapi/scorm/agent-profile")
-            return res.status(200)
+            return res.status(400)
                       .send(`Not Tested -- your profileId ${profileId} didn't match one defined in the xAPI SCORM Profile`);
 
         var valresult = validate(profile, agentprofileschema);
@@ -46,8 +44,7 @@ module.exports = function (the_app) {
             valresult, agentprofileschema,
             function (err, validationResult){
                 io.emit(channel, validationResult);
-                return res.status(200).json(validationResult);
-                // return res.status(204).send("No Content");
+                return res.status(204).send("No Content");
         });
     });
     return router;

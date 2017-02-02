@@ -15,8 +15,6 @@ module.exports = function (the_app) {
     });
 
     router.post('/state', testAuth, testForParams(['activityId', 'agent', 'stateId']), function(req, res, next) {
-        // TODO: channel info to IO, instead of response
-        // TODO: save profiles to db
         const user = req.user;
         const actdoc = req.body;
 
@@ -27,7 +25,7 @@ module.exports = function (the_app) {
         const stateId = req.query.stateId;
         if (stateId !== "https://w3id.org/xapi/scorm/attempt-state" &&
             stateId !== "https://w3id.org/xapi/scorm/activity-state")
-            return res.status(200)
+            return res.status(400)
                       .send(`Not Tested -- your stateId ${stateId} didn't match one defined in the xAPI SCORM Profile`);
 
         var curschema = (stateId === "https://w3id.org/xapi/scorm/attempt-state") ?
@@ -40,13 +38,11 @@ module.exports = function (the_app) {
             valresult, curschema,
             function (err, validationResult){
                 io.emit(channel, validationResult);
-                return res.status(200).json(validationResult);
+                return res.status(204).send("No Content");
         });
     });
 
     router.post('/profile', testAuth, testForParams(['activityId', 'profileId']), function(req, res, next) {
-        // TODO: channel info to IO, instead of response
-        // TODO: save profiles to db
         const user = req.user;
         const actdoc = req.body;
 
@@ -56,7 +52,7 @@ module.exports = function (the_app) {
 
         const profileId = req.query.profileId;
         if (profileId !== "https://w3id.org/xapi/scorm/activity-profile")
-            return res.status(200)
+            return res.status(400)
                       .send(`Not Tested -- your profileId ${profileId} didn't match one defined in the xAPI SCORM Profile`);
 
         const valresult = validate(actdoc, activityprofileschema);
@@ -65,9 +61,8 @@ module.exports = function (the_app) {
             actdoc, profileId.slice(profileId.lastIndexOf('/') +1),
             valresult, activityprofileschema,
             function (err, validationResult){
-                debug('VR: ', validationResult);
                 io.emit(channel, validationResult);
-                return res.status(200).json(validationResult);
+                return res.status(204).send("No Content");
         });
     });
 
