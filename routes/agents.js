@@ -45,6 +45,7 @@ module.exports = function (the_app) {
             profile, profileId.slice(profileId.lastIndexOf('/') +1),
             valresult, agentprofileschema,
             function (err, validationResult){
+                io.emit(channel, validationResult);
                 return res.status(200).json(validationResult);
                 // return res.status(204).send("No Content");
         });

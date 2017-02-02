@@ -1,0 +1,42 @@
+<html>
+<head>
+    <title>{{ title }}</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<body>
+    <h1>Document Results</h1>
+    <ul id="results"></ul>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        socket.on('{{ streamid }}-document-validation-report', function(result){
+            console.log(result);
+            var ul = document.getElementById('results');
+            var li = document.createElement('li');
+            li.innerHTML = (result.success)?"Success!":"Fail";
+            ul.appendChild(li);
+            var subul = document.createElement('ul');
+            ul.appendChild(subul);
+            li = document.createElement('li');
+            li.innerHTML = result.message;
+            subul.appendChild(li);
+            if (result.jsonschema) {
+                li = document.createElement('li');
+                li.innerHTML = "Tested against: <a href='" + result.jsonschema.link + "'>" + result.jsonschema.id + "</a>";
+                subul.appendChild(li);
+            }
+            if (result.errorset) {
+                var errul = document.createElement('ul');
+                subul.appendChild(errul);
+                for (var idx in result.errorset) {
+                    li = document.createElement('li');
+                    li.innerHTML = result.errorset[idx].message + " @ " + result.errorset[idx].property;
+                    errul.appendChild(li);
+                }
+            }
+
+        });
+    </script>
+</body>
+</html>

@@ -39,6 +39,7 @@ module.exports = function (the_app) {
             actdoc, stateId.slice(stateId.lastIndexOf('/') +1),
             valresult, curschema,
             function (err, validationResult){
+                io.emit(channel, validationResult);
                 return res.status(200).json(validationResult);
         });
     });
@@ -65,6 +66,7 @@ module.exports = function (the_app) {
             valresult, activityprofileschema,
             function (err, validationResult){
                 debug('VR: ', validationResult);
+                io.emit(channel, validationResult);
                 return res.status(200).json(validationResult);
         });
     });
