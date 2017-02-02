@@ -12,7 +12,8 @@ var VRSchema = new mongoose.Schema({
         link: String
     },
     errorset: [mongoose.Schema.Types.Mixed],
-    statement: Object
+    document: Object,
+    type: String,
 }, {timestamps: true});
 
 if (!VRSchema.options.toJSON) VRSchema.options.toJSON = {};

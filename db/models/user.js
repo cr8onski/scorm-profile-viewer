@@ -1,32 +1,11 @@
 'use strict';
 
 var debug = require('debug')('scorm-profile-viewer:user');
-
-
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const crypto = require('crypto');
 
-var VRSchema = new mongoose.Schema({
-    success: {
-        type: Boolean,
-        default: false
-    },
-    message: String,
-    jsonschema: {
-        id: String,
-        link: String
-    },
-    errorset: [mongoose.Schema.Types.Mixed],
-    statement: Object
-}, {timestamps: true});
-
-if (!VRSchema.options.toJSON) VRSchema.options.toJSON = {};
-VRSchema.options.toJSON.transform = function(doc, ret, options) {
-    delete ret._id;
-    delete ret.__v;
-    return ret;
-};
+var VRSchema = require('./validationResult').schema;
 
 var UserSchema = new Schema({
     username: {
@@ -52,14 +31,14 @@ var dohash = function(password, salt, iterations, len, digest, cb) {
     crypto.pbkdf2(password, salt, iterations, len, digest, function(err, pwrdhash) {
         if (err) {
             return cb(err);
-        } 
+        }
         return cb(null, pwrdhash.toString('hex'), salt);
     });
 }
 
 UserSchema.statics.hashPassword = function(password, salt, cb) {
     var len = LEN/2;
-    
+
     if (3 === arguments.length) {
         // existing password and salt
         dohash(password, salt, ITERATIONS, len, DIGEST, cb);
@@ -70,7 +49,7 @@ UserSchema.statics.hashPassword = function(password, salt, cb) {
             if (err) {
                 return cb(err);
             }
-            
+
             salt = salt.toString('hex');
             dohash(password, salt, ITERATIONS, len, DIGEST, cb);
         });
@@ -80,15 +59,18 @@ UserSchema.statics.hashPassword = function(password, salt, cb) {
 
 var User = mongoose.model('User', UserSchema);
 
-User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
-    var vr = this.validationresults.create({statement: stmt});
-    
+User.prototype.saveValidationResult = function (err, doc, type, report, schema, cb) {
+    var vr = this.validationresults.create({document: doc, type: type});
+
     // if no report, message was that no schema matched
     if (err) {
         vr.message = err.message;
         this.validationresults.push(vr);
-        var doc = this.validationresults[0];
-        return cb(null, doc);
+        this.save(function(err, thisuser) {
+            if (err) return cb(err);
+            var doc = thisuser.validationresults[thisuser.validationresults.length-1];
+            return cb(null, doc);
+        });
     }
     else if (report.totalErrors > 0) {
         // results of failed xapi statement
@@ -99,15 +81,18 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
             vr.errorset.push({property: errinfo.trace, message: errinfo.message});
         }
         this.validationresults.push(vr);
-        var doc = this.validationresults[0];
-        return cb(null, doc);
+        this.save(function(err, thisuser) {
+            if (err) return cb(err);
+            var doc = thisuser.validationresults[thisuser.validationresults.length-1];
+            return cb(null, doc);
+        });
     } else {
         // results against schema
         if (report.errors.length > 0) {
             vr.message = "Failed SCORM Profile validation with " +report.errors.length + " error(s)";
             for (var idx in report.errors) {
                 var errinfo = report.errors[idx];
-                vr.errorset.push({property: errinfo.property.replace("instance", "statement"), message: errinfo.instance + " " + errinfo.message});
+                vr.errorset.push({property: errinfo.property.replace("instance", "document"), message: errinfo.instance + " " + errinfo.message});
             }
             vr.jsonschema.id = schema.id;
             var parts = schema.id.split('/');
@@ -120,8 +105,11 @@ User.prototype.saveValidationResult = function (err, stmt, report, schema, cb) {
             vr.jsonschema.link = "/schemas/" + parts[parts.length - 1] + ".json";
         }
         this.validationresults.push(vr);
-        var doc = this.validationresults[0];
-        return cb(null, doc);
+        this.save(function(err, thisuser) {
+            if (err) return cb(err);
+            var doc = thisuser.validationresults[thisuser.validationresults.length-1];
+            return cb(null, doc);
+        });
     }
 };
 

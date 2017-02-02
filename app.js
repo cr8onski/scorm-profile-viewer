@@ -35,9 +35,9 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use(session({ 
-    secret: 'ants ate my sandwich', 
-    cookie: { maxAge: 60000},
+app.use(session({
+    secret: 'ants ate my sandwich',
+    cookie: { maxAge: null},
     resave: false,
     saveUninitialized: false
 }));
@@ -64,7 +64,7 @@ async.series([
                 done(err, user);
             });
         });
-        
+
         cb();
     }],
     function startServer() {
@@ -73,11 +73,15 @@ async.series([
         var users = require('./routes/users')(app);
         var statements = require('./routes/statements')(app);
         var inspect = require('./routes/inspect')(app);
+        var agents = require('./routes/agents')(app);
+        var activities = require('./routes/activities')(app);
         app.use('/', routes);
         app.use('/users', users);
         app.use('/statements', statements);
         app.use('/inspect', inspect);
-        
+        app.use('/agents', agents);
+        app.use('/activities', activities);
+
         // catch 404 and forward to error handler
         app.use(function(req, res, next) {
           var err = new Error('Not Found');

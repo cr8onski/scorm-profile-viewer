@@ -2,3 +2,4 @@
 
 <p>Use your credentials to connect to the LRS endpoints</p>
 <p>Inspect your statements <a href="/inspect/{{user.id}}/statements">here</a></p>
+<p>Inspect your documents <a href="/inspect/{{user.id}}/documents">here</a></p>

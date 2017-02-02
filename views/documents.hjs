@@ -4,13 +4,13 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
 </head>
 <body>
-    <h1>Statement Results</h1>
+    <h1>Document Results</h1>
     <ul id="results"></ul>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-        socket.on('{{ streamid }}-statement-validation-report', function(result){
+        socket.on('{{ streamid }}-document-validation-report', function(result){
             console.log(result);
             var ul = document.getElementById('results');
             var li = document.createElement('li');

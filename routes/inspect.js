@@ -6,6 +6,11 @@ module.exports = function(the_app) {
     router.get('/:streamid/statements', mustBeLoggedIn, function(req, res, next) {
         return res.render('statements', { title: 'Express - Statements endpoint!', streamid: req.params.streamid });
     });
-    
-    return router;  
+
+    router.get('/:streamid/documents', mustBeLoggedIn, function(req, res, next) {
+        return res.render('documents', { title: 'Express - Documents endpoint!', streamid: req.params.streamid });
+    });
+
+
+    return router;
 };
