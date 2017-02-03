@@ -4,6 +4,7 @@ var validate = require('jsonschema').validate;
 var testAuth = require('../lib/util').testAuth;
 var agentprofileschema = require('../schemas/scorm.profile.agent.profile.schema.json');
 var testForParams = require('../lib/util').testForParams;
+var VR = require('../db/models/validationResult');
 
 
 module.exports = function (the_app) {
@@ -39,12 +40,12 @@ module.exports = function (the_app) {
 
         var valresult = validate(profile, agentprofileschema);
 
-        user.saveValidationResult(null,
-            profile, profileId.slice(profileId.lastIndexOf('/') +1),
-            valresult, agentprofileschema,
-            function (err, validationResult){
-                io.emit(channel, validationResult);
-                return res.status(204).send("No Content");
+        user.saveValidationResult(
+            VR.normalize(null,profile, profileId.slice(profileId.lastIndexOf('/') +1),
+                valresult, agentprofileschema),
+                function (err, validationResult){
+                    io.emit(channel, validationResult);
+                    return res.status(204).send("No Content");
         });
     });
     return router;

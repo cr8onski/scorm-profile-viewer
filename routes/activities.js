@@ -6,6 +6,7 @@ var testForParams = require('../lib/util').testForParams;
 var activitystateschema = require('../schemas/scorm.profile.activity.state.schema.json');
 var attemptstateschema = require('../schemas/scorm.profile.attempt.state.schema.json');
 var activityprofileschema = require('../schemas/scorm.profile.activity.profile.schema.json');
+var VR = require('../db/models/validationResult');
 
 // state: activityid, agent, stateid for POST and single GET, activityid, agent for multi GET
 // profile: activityid
@@ -33,9 +34,9 @@ module.exports = function (the_app) {
 
         const valresult = validate(actdoc, curschema);
 
-        user.saveValidationResult(null,
+        user.saveValidationResult(VR.normalize(null,
             actdoc, stateId.slice(stateId.lastIndexOf('/') +1),
-            valresult, curschema,
+            valresult, curschema),
             function (err, validationResult){
                 io.emit(channel, validationResult);
                 return res.status(204).send("No Content");
@@ -57,9 +58,9 @@ module.exports = function (the_app) {
 
         const valresult = validate(actdoc, activityprofileschema);
 
-        user.saveValidationResult(null,
+        user.saveValidationResult(VR.normalize(null,
             actdoc, profileId.slice(profileId.lastIndexOf('/') +1),
-            valresult, activityprofileschema,
+            valresult, activityprofileschema),
             function (err, validationResult){
                 io.emit(channel, validationResult);
                 return res.status(204).send("No Content");

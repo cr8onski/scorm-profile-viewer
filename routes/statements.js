@@ -10,6 +10,7 @@ var testAuth = require('../lib/util').testAuth;
 var validate = require('jsonschema').validate;
 var stmtvalidator = require('../lib/stmtvalidator').Validator;
 var validateStatement = (new stmtvalidator()).validateStatement;
+var VR = require('../db/models/validationResult');
 
 var schemas = {
     "http://adlnet.gov/expapi/verbs/initialized": require('../schemas/scorm.profile.initializing.attempt.schema.json'),
@@ -38,7 +39,7 @@ module.exports = function (the_app) {
         // validate statement
         var report = validateStatement(stmt);
         if (report.totalErrors > 0) {
-            user.saveValidationResult(null, stmt, 'statement', report, null, function(err, validationResult) {
+            user.saveValidationResult(VR.normalize(null, stmt, 'statement', report, null), function(err, validationResult) {
                 io.emit(channel, validationResult);
                 return res.status(400).send("Bad Request - " + validationResult.message);
             });
@@ -48,7 +49,7 @@ module.exports = function (the_app) {
         // find schema
         var schema = schemas[stmt.verb.id];
         if (!schema) {
-            user.saveValidationResult(new Error("Statement didn't match a schema.. unvalidated"), stmt, 'statement', null, null, function(err, validationResult) {
+            user.saveValidationResult(VR.normalize(new Error("Statement didn't match a schema.. unvalidated"), stmt, 'statement', null, null), function(err, validationResult) {
                 io.emit(channel, validationResult);
                 return res.status(400).send("Bad Request - " + validationResult.message);
             });
@@ -58,12 +59,12 @@ module.exports = function (the_app) {
         // validate against schema
         var validatedresponse = validate(req.body, schema);
         if (validatedresponse.errors.length > 0) {
-            user.saveValidationResult(null, stmt, 'statement', validatedresponse, schema, function (err, validationResult) {
+            user.saveValidationResult(VR.normalize(null, stmt, 'statement', validatedresponse, schema), function (err, validationResult) {
                 io.emit(channel, validationResult);
                 return res.status(400).send("Bad Request - " + validationResult.message);
             });
         } else {
-            user.saveValidationResult(null, stmt, 'statement', validatedresponse, schema, function (err, validationResult){
+            user.saveValidationResult(VR.normalize(null, stmt, 'statement', validatedresponse, schema), function (err, validationResult){
                 io.emit(channel, validationResult);
                 return res.status(200).json([validationResult.document.id]);
             })
