@@ -58,18 +58,12 @@ module.exports = function (the_app) {
 
         // validate against schema
         var validatedresponse = validate(req.body, schema);
-        if (validatedresponse.errors.length > 0) {
-            user.saveValidationResult(VR.normalize(null, stmt, 'statement', validatedresponse, schema), function (err, validationResult) {
-                io.emit(channel, validationResult);
-                return res.status(400).send("Bad Request - " + validationResult.message);
-            });
-        } else {
-            user.saveValidationResult(VR.normalize(null, stmt, 'statement', validatedresponse, schema), function (err, validationResult){
-                io.emit(channel, validationResult);
-                return res.status(200).json([validationResult.document.id]);
-            })
-        }
-
+        user.saveValidationResult(VR.normalize(null, stmt, 'statement', validatedresponse, schema), function (err, validationResult){
+            io.emit(channel, validationResult);
+            return (validatedresponse.errors.length > 0) ?
+                res.status(400).send("Bad Request - " + validationResult.message) :
+                res.status(200).json([validationResult.document.id]);
+        });
     });
     return router;
 }
